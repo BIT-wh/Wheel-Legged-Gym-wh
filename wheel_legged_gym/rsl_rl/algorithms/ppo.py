@@ -142,8 +142,8 @@ class PPO:
         self.storage.compute_returns(last_values, self.gamma, self.lam)
 
     def update(self):
-        # if self.kl_decay != 0:
-        #     self.desired_kl = max(self.desired_kl - self.kl_decay, 0.001)
+        if self.kl_decay != 0:
+            self.desired_kl = max(self.desired_kl - self.kl_decay, 0.001)
         num_updates = 0
         mean_value_loss = 0
         mean_surrogate_loss = 0
