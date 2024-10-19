@@ -910,10 +910,11 @@ class Diablo(BaseTask):
         actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
         dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
         net_contact_forces = self.gym.acquire_net_contact_force_tensor(self.sim)
+        rigid_body_state = self.gym.acquire_rigid_body_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
-
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
         # create some wrapper tensors for different slices
         self.root_states = gymtorch.wrap_tensor(actor_root_state)
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
@@ -925,7 +926,11 @@ class Diablo(BaseTask):
         self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(
             self.num_envs, -1, 3
         )  # shape: num_envs, num_bodies, xyz axis
-
+        self.rigid_state = gymtorch.wrap_tensor(rigid_body_state).view(self.num_envs, -1, 13)
+        # self.rigid_pos = self.rigid_state[..., 0:3]
+        # self.rigid_quat = self.rigid_state[..., 3:7]
+        # self.rigid_lin_vel = self.rigid_state[..., 7:10]
+        # self.rigid_ang_vel = self.rigid_state[..., 10:13]
         # initialize some data used later on
         self.common_step_counter = 0
         self.extras = {}
@@ -1402,7 +1407,8 @@ class Diablo(BaseTask):
             self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
                 self.envs[0], self.actor_handles[0], termination_contact_names[i]
             )
-
+        # init feet height tensor
+        self.feet_height = torch.zeros((self.num_envs, 2), device=self.device)
     def _get_env_origins(self):
         """Sets environment origins. On rough terrain the origins are defined by the terrain platforms.
         Otherwise create a grid.

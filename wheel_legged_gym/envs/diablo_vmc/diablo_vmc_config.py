@@ -38,13 +38,13 @@ class DiabloVMCCfg(DiabloCfg):
     class env(DiabloCfg.env):
         num_observations = 33
         num_privileged_obs = (
-                num_observations + 7 * 11 + 3 + 6 * 7 + 3 + 3
+                num_observations + 7 * 11 + 3 + 6 * 6 + 3 + 3 + 2
         )
         fail_to_terminal_time_s = 0.5
         episode_length_s = 20
 
     class terrain(DiabloCfg.terrain):
-        mesh_type = "trimesh"
+        mesh_type = "plane"
         # mesh_type = "trimesh"  # "heightfield" # none, plane, heightfield or trimesh
         horizontal_scale = 0.1  # [m]
         vertical_scale = 0.005  # [m]
@@ -93,21 +93,21 @@ class DiabloVMCCfg(DiabloCfg):
             nominal_state = -0.1
             lin_vel_z = -0.1e-3
             ang_vel_xy = -0.05
-            orientation = -100.0
+            orientation = -5.0
 
-            dof_vel = -5e-2
-            dof_acc = -2.5e-3
-            torques = -0.1e-5
-            action_rate = -0.01
-            action_smooth = -0.01
+            dof_vel = -5e-5
+            dof_acc = -2.5e-7
+            torques = -0.1e-4
+            action_rate = -0.001
+            action_smooth = -0.001
 
-            collision = -1.0
-            dof_pos_limits = -1
+            collision = -10.0
+            dof_pos_limits = -0.1
 
-            theta_limit = -0.1e-8
+            theta_limit = -0.01
             same_l = -0.1e-8
             # special for wheel
-            wheel_vel = -0.001
+            # wheel_vel = -0.01
 
         base_height_target = 0.30
         only_positive_rewards = True  # if true negative total rewards are clipped at zero (avoids early termination problems)
@@ -187,17 +187,24 @@ class DiabloVMCCfg(DiabloCfg):
         randomize_Kd_range = [0.8, 1.2]
         randomize_motor_torque = True
         randomize_motor_torque_range = [0.8, 1.2]
-        randomize_default_dof_pos = True
-        randomize_default_dof_pos_range = [-0.05, 0.05]
+        randomize_default_dof_pos = False               
+        randomize_default_dof_pos_range = [-0.2, 0.2]
         randomize_action_delay = True
         delay_ms_range = [0, 10]
 class DiabloVMCCfgPPO(DiabloCfgPPO):
 
     class algorithm(DiabloCfgPPO.algorithm):
+        is_kl_decay = True
         kl_decay = (
                            DiabloCfgPPO.algorithm.desired_kl - 0.002
                    ) / DiabloCfgPPO.runner.max_iterations
 
     class runner(DiabloCfgPPO.runner):
         # logging
-        experiment_name = "diablo_vmc"
+        policy_class_name = (
+            "ActorCriticSequence"  # could be ActorCritic, ActorCriticSequence
+        )
+        # experiment_name = "diablo_vmc_flat_state_estimate"
+        experiment_name = "diablo_vmc_flat"
+        run_name = "state_estimate--have_ppo_kl_decay--critic_add_feet_height--estimate_feet_height"
+        max_iterations = 30000

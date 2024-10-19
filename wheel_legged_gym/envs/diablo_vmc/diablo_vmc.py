@@ -344,9 +344,16 @@ class DiabloVMC(Diablo):
                     )
                     * self.obs_scales.height_measurements
             )
+            wheel_radius = self.cfg.asset.wheel_radius
+            self.feet_height = (self.rigid_state[:, self.feet_indices, 2] - wheel_radius ) * self.obs_scales.height_measurements
+            self.feet_root_distance = (self.base_position - self.rigid_state[:, self.feet_indices, 2]) * self.obs_scales.height_measurements
+            print('self.feet_root_distance', self.feet_root_distance)
+            # print('self.feet_indices', self.feet_indices)
+            # print('self.rigid_state',self.rigid_state[0,])
             self.privileged_obs_buf = torch.cat(
                 (
                     self.base_lin_vel * self.obs_scales.lin_vel,
+                    self.feet_height,
                     self.obs_buf,
                     self.last_actions[:, :, 0],
                     self.last_actions[:, :, 1],
@@ -357,13 +364,11 @@ class DiabloVMC(Diablo):
                     self.torques * self.obs_scales.torque,
                     (self.base_mass - self.base_mass.mean()).view(self.num_envs, 1),
                     self.base_com,
-                    self.default_dof_pos - self.raw_default_dof_pos,
                     self.friction_coef.view(self.num_envs, 1),
                     self.restitution_coef.view(self.num_envs, 1),
                 ),
                 dim=-1,
             )
-
         # add noise if needed
         if self.add_noise:
             self.obs_buf += (
@@ -867,7 +872,7 @@ class DiabloVMC(Diablo):
                 )
             ).squeeze(-1)
             self.action_delay_idx = action_delay_idx.long()
-
+        return super()._init_buffers()
     # ------------ reward functions----------------
     def _reward_theta_limit(self):
         # Penalize theta is too huge

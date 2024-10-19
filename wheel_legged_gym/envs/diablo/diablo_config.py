@@ -138,7 +138,7 @@ class DiabloCfg(BaseConfig):
         terminate_after_contacts_on = ["shank", "thigh", "diablo_base_link"]
         self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
-        foot_name = "None"  # name of the feet bodies, used to index body state and contact force tensors
+        foot_name = "wheel"  # name of the feet bodies, used to index body state and contact force tensors
         disable_gravity = False
         collapse_fixed_joints = True  # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
         fix_base_link = False  # fixe the base of the robot
@@ -152,6 +152,8 @@ class DiabloCfg(BaseConfig):
         max_linear_velocity = 1000.0
         armature = 0.0
         thickness = 0.01
+
+        wheel_radius = 0.1
 
     class domain_rand:
         randomize_friction = True
@@ -277,7 +279,7 @@ class DiabloCfgPPO(BaseConfig):
         num_encoder_obs = (
                 DiabloCfg.env.obs_history_length * DiabloCfg.env.num_observations
         )
-        latent_dim = 3  # at least 3 to estimate base linear velocity
+        latent_dim = 5  # at least 3 to estimate base linear velocity
         encoder_hidden_dims = [128, 64]
 
     class algorithm:

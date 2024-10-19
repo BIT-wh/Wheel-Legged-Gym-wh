@@ -2,11 +2,11 @@
 #  SPDX-License-Identifier: BSD-3-Clause
 
 from __future__ import annotations
-
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
+from torch.nn import functional
 from wheel_legged_gym.rsl_rl.modules import ActorCritic
 from wheel_legged_gym.rsl_rl.storage import RolloutStorage
 
@@ -31,8 +31,10 @@ class PPO:
         schedule="fixed",
         desired_kl=0.01,
         kl_decay=0,
+        is_kl_decay=False,
         device="cpu",
     ):
+        self.is_kl_decay = is_kl_decay
         self.device = device
 
         self.desired_kl = desired_kl
@@ -142,8 +144,10 @@ class PPO:
         self.storage.compute_returns(last_values, self.gamma, self.lam)
 
     def update(self):
-        if self.kl_decay != 0:
-            self.desired_kl = max(self.desired_kl - self.kl_decay, 0.001)
+        if self.is_kl_decay:
+            if self.kl_decay != 0:
+                self.desired_kl = max(self.desired_kl - self.kl_decay, 0.001)
+        # print('self.desired_kl',self.desired_kl)
         num_updates = 0
         mean_value_loss = 0
         mean_surrogate_loss = 0
@@ -261,23 +265,35 @@ class PPO:
             for next_obs_batch, critic_obs_batch, obs_history_batch in generator:
                 if self.actor_critic.is_sequence:
                     latent_batch = self.actor_critic.encode(obs_history_batch)
+                    latent_vel_batch = latent_batch[:, :3]
+                    critic_obs_vel_batch = critic_obs_batch[:, :3]
                     vel_est_loss = (
-                        (latent_batch[:, :3] - critic_obs_batch[:, :3]).pow(2).mean()
+                        (latent_vel_batch - critic_obs_vel_batch).pow(2).mean()
                     )
-                    v_x_est_diff = (latent_batch[:, 0] - critic_obs_batch[:, 0]).mean()
-                    v_y_est_diff = (latent_batch[:, 1] - critic_obs_batch[:, 1]).mean()
-                    v_z_est_diff = (latent_batch[:, 2] - critic_obs_batch[:, 2]).mean()
-                    self.vel_est_loss = vel_est_loss.item()
+                    # v_x_est_diff = (latent_batch[:, 0] - critic_obs_batch[:, 0]).mean()
+                    # v_y_est_diff = (latent_batch[:, 1] - critic_obs_batch[:, 1]).mean()
+                    # v_z_est_diff = (latent_batch[:, 2] - critic_obs_batch[:, 2]).mean()
+
+                    vel_difference = latent_vel_batch.cpu().detach().numpy() - critic_obs_vel_batch.cpu().detach().numpy()
+
+                    v_x_est_diff , v_y_est_diff , v_z_est_diff = np.mean(np.abs(vel_difference),axis=0)
+                    self.vel_est_loss = vel_est_loss
+
                     if self.actor_critic.latent_dim > 3:
-                        obs_denoise_loss = (
+                        latent_feet_height_batch = latent_batch[:, 3:5]
+                        critic_obs_feet_height_batch = critic_obs_batch[:, 3:5]
+                        feet_height_est_loss = (
                             (
-                                latent_batch[:, 3 : self.actor_critic.latent_dim]
-                                - critic_obs_batch[:, 3 : self.actor_critic.latent_dim]
+                                latent_feet_height_batch
+                                - critic_obs_feet_height_batch
                             )
                             .pow(2)
                             .mean()
                         )
-                        extra_loss = vel_est_loss + obs_denoise_loss
+                        extra_loss = vel_est_loss + feet_height_est_loss
+
+                        feet_height_difference = latent_feet_height_batch.cpu().detach().numpy() - critic_obs_feet_height_batch.cpu().detach().numpy()
+                        left_feet_height, right_feet_height = np.mean(np.abs(feet_height_difference),axis=0)
                     else:
                         extra_loss = vel_est_loss
 
@@ -295,5 +311,10 @@ class PPO:
         if num_updates_extra > 0:
             mean_extra_loss /= num_updates_extra
         self.storage.clear()
-
-        return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss,v_x_est_diff ,  v_y_est_diff, v_z_est_diff)
+        if self.actor_critic.is_sequence:
+            if self.actor_critic.latent_dim > 3:
+                return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff, v_z_est_diff, left_feet_height, right_feet_height)
+            else:
+                return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss,v_x_est_diff ,  v_y_est_diff, v_z_est_diff)
+        else:
+            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss)

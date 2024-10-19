@@ -187,32 +187,40 @@ class TaskRegistry:
         # override cfg from args (if specified)
         _, train_cfg = update_cfg_from_args(None, train_cfg, args)
 
-        if log_root == "default":
-            log_root = os.path.join(
-                WHEEL_LEGGED_GYM_ROOT_DIR,
-                "logs",
-                train_cfg.runner.experiment_name,
-            )
-            if not os.path.exists(log_root):
-                os.mkdir(log_root)
-            self.log_dir = os.path.join(
-                log_root,
-                datetime.now().strftime("%b%d_%H-%M-%S")
-                + "_"
-                + train_cfg.runner.run_name
-                + args.exptid,
-            )
+        # if log_root == "default":
+        #     log_root = os.path.join(
+        #         WHEEL_LEGGED_GYM_ROOT_DIR,
+        #         "logs",
+        #         train_cfg.runner.experiment_name,
+        #     )
+        #     if not os.path.exists(log_root):
+        #         os.mkdir(log_root)
+        #     self.log_dir = os.path.join(
+        #         log_root,
+        #         datetime.now().strftime("%b%d_%H-%M-%S")
+        #         + "_"
+        #         + train_cfg.runner.run_name
+        #         + args.exptid,
+        #     )
+        # elif log_root is None:
+        #     self.log_dir = None
+        # else:
+        #     self.log_dir = os.path.join(
+        #         log_root,
+        #         datetime.now().strftime("%b%d_%H-%M-%S")
+        #         + "_"
+        #         + train_cfg.runner.run_name
+        #         + args.exptid,
+        #     )
+        # log文件的地址和命名
+        if log_root=="default":
+            log_root = os.path.join(WHEEL_LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name)
+            log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
         elif log_root is None:
-            self.log_dir = None
+            log_dir = None
         else:
-            self.log_dir = os.path.join(
-                log_root,
-                datetime.now().strftime("%b%d_%H-%M-%S")
-                + "_"
-                + train_cfg.runner.run_name
-                + args.exptid,
-            )
-
+            log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
+        self.log_dir = log_dir
         train_cfg_dict = class_to_dict(train_cfg)
         runner = OnPolicyRunner(
             env, train_cfg_dict, self.log_dir, device=args.rl_device

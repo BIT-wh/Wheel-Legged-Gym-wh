@@ -116,5 +116,6 @@ class DiabloVMCFlatCfgPPO(DiabloVMCCfgPPO):
             "ActorCriticSequence"  # could be ActorCritic, ActorCriticSequence
         )
         # experiment_name = "diablo_vmc_flat_state_estimate"
-        experiment_name = "diablo_vmc_flat_state_estimate_no_ppo_kl_decay"
+        experiment_name = "diablo_vmc_flat"
+        run_name = "state_estimate--no_ppo_kl_decay"
         max_iterations = 30000

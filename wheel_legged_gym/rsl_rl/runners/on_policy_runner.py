@@ -164,10 +164,17 @@ class OnPolicyRunner:
                 else:
                     critic_obs__ = critic_obs
                 self.alg.compute_returns(critic_obs__)
-
-            mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff,v_z_est_diff  = (
-                self.alg.update()
-            )
+            if self.policy_cfg["latent_dim"] > 3:
+                mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, \
+                v_x_est_diff, v_y_est_diff,v_z_est_diff , \
+                left_feet_height, right_feet_height  = (
+                    self.alg.update()
+                )
+            else:
+                mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, \
+                v_x_est_diff, v_y_est_diff, v_z_est_diff = (
+                    self.alg.update()
+                )
             stop = time.time()
             learn_time = stop - start
             if self.log_dir is not None:
@@ -205,9 +212,12 @@ class OnPolicyRunner:
             * self.env.num_envs
             / (locs["collection_time"] + locs["learn_time"])
         )
-        self.writer.add_scalar("State_Esimator/mean_v_x_est_diff", locs["v_x_est_diff"], locs["it"])
-        self.writer.add_scalar("State_Esimator/mean_v_y_est_diff", locs["v_y_est_diff"], locs["it"])
-        self.writer.add_scalar("State_Esimator/mean_v_z_est_diff", locs["v_z_est_diff"], locs["it"])
+        self.writer.add_scalar("State_Esimator/mean_v_x_est_diff", locs["v_x_est_diff"] / 10., locs["it"])
+        self.writer.add_scalar("State_Esimator/mean_v_y_est_diff", locs["v_y_est_diff"] / 10., locs["it"])
+        self.writer.add_scalar("State_Esimator/mean_v_z_est_diff", locs["v_z_est_diff"] / 10., locs["it"])
+        if self.policy_cfg["latent_dim"] > 3:
+            self.writer.add_scalar("State_Esimator/left_feet_height", locs["left_feet_height"] / 5., locs["it"])
+            self.writer.add_scalar("State_Esimator/right_feet_height", locs["right_feet_height"] / 5., locs["it"])
         self.writer.add_scalar(
             "Loss/value_function", locs["mean_value_loss"], locs["it"]
         )
@@ -263,7 +273,7 @@ class OnPolicyRunner:
             #   f"""{'Mean length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")
         if self.alg.actor_critic.is_sequence:
             log_string += (
-                f"""{'vel_est_loss' :>{pad}} {self.alg.vel_est_loss:.4f}\n"""
+                f"""{'mean_extra_loss' :>{pad}} {locs['mean_extra_loss'] / 100.:.4f}\n"""
             )
         log_string += ep_string
         log_string += (
