@@ -318,9 +318,7 @@ class DiabloVMC(Diablo):
                 self.theta0_dot * self.obs_scales.dof_vel,  # 2
                 self.L0 * self.obs_scales.l0,   # 2
                 self.L0_dot * self.obs_scales.l0_dot,   # 2
-                # self.dof_pos[:, [2, 5]] * self.obs_scales.dof_pos,  # 2
-                # self.dof_vel[:, [2, 5]] * self.obs_scales.dof_vel,  # 2
-                self.dof_pos[:, [0,1,3,4]] * self.obs_scales.dof_pos,  # 4  # dof_pos(去掉轮子)
+                # self.dof_pos[:, [0,1,3,4]] * self.obs_scales.dof_pos,  # 4  # dof_pos(去掉轮子)
                 self.dof_vel * self.obs_scales.dof_vel,  # 6    # dof_vel(所有)
                 self.actions,   # 6
             ),
@@ -346,14 +344,14 @@ class DiabloVMC(Diablo):
             )
             wheel_radius = self.cfg.asset.wheel_radius
             self.feet_height = (self.rigid_state[:, self.feet_indices, 2] - wheel_radius ) * self.obs_scales.height_measurements
-            self.feet_root_distance = (self.base_position - self.rigid_state[:, self.feet_indices, 2]) * self.obs_scales.height_measurements
-            print('self.feet_root_distance', self.feet_root_distance)
+            # self.feet_root_distance = (self.base_position - self.rigid_state[:, self.feet_indices, 2]) * self.obs_scales.height_measurements
+            # print('self.feet_root_distance', self.feet_root_distance)
             # print('self.feet_indices', self.feet_indices)
             # print('self.rigid_state',self.rigid_state[0,])
             self.privileged_obs_buf = torch.cat(
                 (
                     self.base_lin_vel * self.obs_scales.lin_vel,
-                    self.feet_height,
+                    # self.feet_height,
                     self.obs_buf,
                     self.last_actions[:, :, 0],
                     self.last_actions[:, :, 1],

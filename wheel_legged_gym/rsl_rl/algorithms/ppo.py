@@ -258,6 +258,11 @@ class PPO:
 
         num_updates_extra = 0
         mean_extra_loss = 0
+        v_x_est_diff = 0
+        v_y_est_diff = 0
+        v_z_est_diff = 0
+        left_feet_height = 0
+        right_feet_height = 0
         if self.extra_optimizer is not None:
             generator = self.storage.encoder_mini_batch_generator(
                 self.num_mini_batches, self.num_learning_epochs
@@ -311,10 +316,7 @@ class PPO:
         if num_updates_extra > 0:
             mean_extra_loss /= num_updates_extra
         self.storage.clear()
-        if self.actor_critic.is_sequence:
-            if self.actor_critic.latent_dim > 3:
-                return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff, v_z_est_diff, left_feet_height, right_feet_height)
-            else:
-                return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss,v_x_est_diff ,  v_y_est_diff, v_z_est_diff)
+        if self.actor_critic.is_sequence and self.actor_critic.latent_dim > 3:
+            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff, v_z_est_diff, left_feet_height, right_feet_height)
         else:
-            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss)
+            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss,v_x_est_diff ,  v_y_est_diff, v_z_est_diff)

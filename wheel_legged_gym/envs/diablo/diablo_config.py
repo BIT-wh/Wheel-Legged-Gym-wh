@@ -34,10 +34,11 @@ from wheel_legged_gym.envs.base.base_config import BaseConfig
 class DiabloCfg(BaseConfig):
     class env:
         num_envs = 4096
-        num_observations = 33
+        num_observations = 27 - 2 + 2
         num_privileged_obs = (
-                num_observations + 7 * 11 + 3 + 6 * 5 + 3 + 3
+                num_observations + 7 * 11 + 3 + 6 * 5 + 3 + 3 + 2#feet height
         )  # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
+        # num_privileged_obs = None
         obs_history_length = 5  # number of observations stacked together
         obs_history_dec = 1
         num_actions = 6
@@ -45,7 +46,7 @@ class DiabloCfg(BaseConfig):
         send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 20  # episode length in seconds
         dof_vel_use_pos_diff = True
-        fail_to_terminal_time_s = 1
+        fail_to_terminal_time_s = 0.5  # time after which the env will be terminated if the robot is fail
 
     class terrain:
         mesh_type = "plane"
@@ -97,13 +98,13 @@ class DiabloCfg(BaseConfig):
         heading_command = False  # if true: compute ang vel command from heading error
 
         class ranges:
-            lin_vel_x = [-2.0, 2.0]  # min max [m/s]
-            ang_vel_yaw = [-3.14, 3.14]  # min max [rad/s]
+            lin_vel_x = [-1.0, 1.0]  # min max [m/s]
+            ang_vel_yaw = [-1, 1]  # min max [rad/s]
             height = [0.18, 0.25]
             heading = [-3.14, 3.14]
 
     class init_state:
-        pos = [0.0, 0.0, 0.35]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.24]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -113,7 +114,13 @@ class DiabloCfg(BaseConfig):
             "left_wheel_joint": 0.0,
             "right_hip_joint": 0.65,
             "right_knee_joint": -1.25,
-            "right_wheel_joint": 0.0,
+            "right_wheel_joint": 0            
+            # "left_hip_joint": 0.0,
+            # "left_knee_joint": 0.0,
+            # "left_wheel_joint": 0.0,
+            # "right_hip_joint": 0.0,
+            # "right_knee_joint": 0.0,
+            # "right_wheel_joint": 0.0,            
         }
 
     class control:
@@ -124,7 +131,7 @@ class DiabloCfg(BaseConfig):
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 2
+        decimation = 2  # 100Hz
         pos_action_scale = 0.5
         vel_action_scale = 10.0
 
@@ -175,10 +182,10 @@ class DiabloCfg(BaseConfig):
         randomize_Kd_range = [0.9, 1.1]
         randomize_motor_torque = True
         randomize_motor_torque_range = [0.9, 1.1]
-        randomize_default_dof_pos = True
-        randomize_default_dof_pos_range = [-0.05, 0.05]
+        randomize_default_dof_pos = False
+        randomize_default_dof_pos_range = [-0.2, 0.2]
         randomize_action_delay = True
-        delay_ms_range = [0, 10]
+        delay_ms_range = [0, 10] # [5, 10]  # sim dt = 0.005, 10对应
 
     class rewards:
         class scales:
@@ -186,22 +193,29 @@ class DiabloCfg(BaseConfig):
             tracking_lin_vel_enhance = 1
             tracking_ang_vel = 1.0
 
-            base_height = 1.0
+            base_height = 0.5
             nominal_state = -0.1
-            lin_vel_z = -2.0
+            lin_vel_z = -0.1e-3
             ang_vel_xy = -0.05
-            orientation = -50.0
+            orientation = -5.0
 
             dof_vel = -5e-5
             dof_acc = -2.5e-7
-            torques = -0.0001
-            action_rate = -0.03
-            action_smooth = -0.03
+            torques = -0.1e-4
+            action_rate = -0.001
+            action_smooth = -0.001
 
-            collision = -1.0
-            dof_pos_limits = -1.0
+            collision = -10.0
+            dof_pos_limits = -0.1
 
-        only_positive_rewards = False  # if true negative total rewards are clipped at zero (avoids early termination problems)
+            # theta_limit = -0.01
+            # same_l = -0.1e-8
+            # special for wheel
+            # wheel_vel = -0.01
+
+        base_height_target = 0.30
+        only_positive_rewards = True  # if true negative total rewards are clipped at zero (avoids early termination problems)
+
         clip_single_reward = 1
         tracking_sigma = 0.25  # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = (
@@ -209,7 +223,6 @@ class DiabloCfg(BaseConfig):
         )
         soft_dof_vel_limit = 1.0
         soft_torque_limit = 1.0
-        base_height_target = 0.25
         max_contact_force = 100.0  # forces above this value are penalized
 
     class normalization:
@@ -244,7 +257,7 @@ class DiabloCfg(BaseConfig):
         lookat = [0, 0, 0]  # [m]
 
     class sim:
-        dt = 0.005
+        dt = 0.005 # 200Hz
         substeps = 1
         gravity = [0.0, 0.0, -9.81]  # [m/s^2]
         up_axis = 1  # 0 is y, 1 is z
@@ -279,7 +292,7 @@ class DiabloCfgPPO(BaseConfig):
         num_encoder_obs = (
                 DiabloCfg.env.obs_history_length * DiabloCfg.env.num_observations
         )
-        latent_dim = 5  # at least 3 to estimate base linear velocity
+        latent_dim = 3  # at least 3 to estimate base linear velocity, 4:5 is estimate feet height
         encoder_hidden_dims = [128, 64]
 
     class algorithm:
@@ -304,7 +317,7 @@ class DiabloCfgPPO(BaseConfig):
         #     "ActorCriticSequence"  # could be ActorCritic, ActorCriticSequence
         # )
         policy_class_name = (
-            "ActorCritic"  # could be ActorCritic, ActorCriticSequence
+            "ActorCriticSequence"  # could be ActorCritic, ActorCriticSequence
         )
         algorithm_class_name = "PPO"
         num_steps_per_env = 48  # per iteration
@@ -312,8 +325,8 @@ class DiabloCfgPPO(BaseConfig):
 
         # logging
         save_interval = 100  # check for potential saves every this many iterations
-        experiment_name = "diablo"
-        run_name = ""
+        experiment_name = "diablo_flat"
+        run_name = "3-E2E-非对称AC-加入腿长相关观测-速度估计"
         # load and resume
         resume = False
         load_run = -1  # -1 = last run

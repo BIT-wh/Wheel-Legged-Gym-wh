@@ -100,12 +100,14 @@ class Diablo(BaseTask):
             self.action_fifo = torch.cat(
                 (self.actions.unsqueeze(1), self.action_fifo[:, :-1, :]), dim=1
             )
+            # print('self.action_delay_idx',self.action_delay_idx)
             self.torques = self._compute_torques(
                 self.action_fifo[torch.arange(self.num_envs), self.action_delay_idx, :]
             ).view(self.torques.shape)
             self.gym.set_dof_actuation_force_tensor(
                 self.sim, gymtorch.unwrap_tensor(self.torques)
             )
+            
             if self.cfg.domain_rand.push_robots:
                 self._push_robots()
             self.gym.simulate(self.sim)
@@ -345,16 +347,17 @@ class Diablo(BaseTask):
         # note that observation noise need to modified accordingly !!!
         obs_buf = torch.cat(
             (
-                self.base_ang_vel * self.obs_scales.ang_vel,
-                self.projected_gravity,
-                self.commands[:, :3] * self.commands_scale,
-                (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
-                self.dof_vel * self.obs_scales.dof_vel,
-                self.actions,
+                self.base_ang_vel * self.obs_scales.ang_vel,    # 3
+                self.projected_gravity, # 3
+                self.commands[:, :3] * self.commands_scale, # 3
+                # (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos, 
+                (self.dof_pos[:, [0,1,3,4]] - self.default_dof_pos[:, [0,1,3,4]]) * self.obs_scales.dof_pos,   # 4
+                self.dof_vel * self.obs_scales.dof_vel, # 6
+                self.actions,   # 6
+                self.L0, # 2(左右腿长)
             ),
             dim=-1,
         )
-        print(self.dof_vel[:, [2, 5]])
         return obs_buf
 
     def compute_observations(self):
@@ -370,10 +373,14 @@ class Diablo(BaseTask):
                 )
                 * self.obs_scales.height_measurements
             )
+            wheel_radius = self.cfg.asset.wheel_radius
+            self.feet_height = (self.rigid_state[:, self.feet_indices, 2] - wheel_radius ) * self.obs_scales.height_measurements
+
             self.privileged_obs_buf = torch.cat(
                 (
-                    self.base_lin_vel * self.obs_scales.lin_vel,
-                    self.obs_buf,
+                    self.base_lin_vel * self.obs_scales.lin_vel,    # 3
+                    self.feet_height, # 2
+                    self.obs_buf,   # 
                     self.last_actions[:, :, 0],
                     self.last_actions[:, :, 1],
                     self.dof_acc * self.obs_scales.dof_acc,

@@ -62,7 +62,7 @@ def play(args):
     env_cfg.domain_rand.randomize_Kd = False
     env_cfg.domain_rand.randomize_motor_torque = False
     env_cfg.domain_rand.randomize_default_dof_pos = False
-    env_cfg.domain_rand.randomize_action_delay = False
+    env_cfg.domain_rand.randomize_action_delay = True
 
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
