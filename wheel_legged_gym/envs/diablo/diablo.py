@@ -100,7 +100,6 @@ class Diablo(BaseTask):
             self.action_fifo = torch.cat(
                 (self.actions.unsqueeze(1), self.action_fifo[:, :-1, :]), dim=1
             )
-            # print('self.action_delay_idx',self.action_delay_idx)
             self.torques = self._compute_torques(
                 self.action_fifo[torch.arange(self.num_envs), self.action_delay_idx, :]
             ).view(self.torques.shape)
