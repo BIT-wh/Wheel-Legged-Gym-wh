@@ -36,7 +36,7 @@ class DiabloCfg(BaseConfig):
         num_envs = 4096
         num_observations = 27 - 2 + 2
         num_privileged_obs = (
-                num_observations + 7 * 11 + 3 + 6 * 5 + 3 + 3 + 2#feet height
+                num_observations + 7 * 11 + 3 + 6 * 5 + 3 + 3 + 1#base height
         )  # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
         obs_history_length = 5  # number of observations stacked together
         obs_history_dec = 1
@@ -80,11 +80,11 @@ class DiabloCfg(BaseConfig):
         terrain_width = 8.0
         num_rows = 10  # number of terrain rows (levels)
         num_cols = 20  # number of terrain cols (types)
-        # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
-        terrain_proportions = [0.0, 0.4, 0.2, 0.1, 0.2, 0.1]
+        # terrain types: [smooth slope, rough slope, uniform, stairs up, stairs down, discrete]
+        terrain_proportions = [0.0, 0., 0, 1, 0, 0., 0.]
         # trimesh only:
         slope_treshold = (
-            0.9  # slopes above this threshold will be corrected to vertical surfaces
+            0.625  # slopes above this threshold will be corrected to vertical surfaces
         )
 
     class commands:
@@ -192,7 +192,7 @@ class DiabloCfg(BaseConfig):
             tracking_lin_vel_enhance = 1
             tracking_ang_vel = 1.0
 
-            base_height = 0.5
+            # base_height = 0.5
             nominal_state = -0.1
             lin_vel_z = -0.1e-3
             ang_vel_xy = -0.05
@@ -204,7 +204,7 @@ class DiabloCfg(BaseConfig):
             action_rate = -0.001
             action_smooth = -0.001
 
-            collision = -10.0
+            collision = -1.0
             dof_pos_limits = -0.1
 
             # theta_limit = -0.01
@@ -291,7 +291,7 @@ class DiabloCfgPPO(BaseConfig):
         num_encoder_obs = (
                 DiabloCfg.env.obs_history_length * DiabloCfg.env.num_observations
         )
-        latent_dim = 5  # at least 3 to estimate base linear velocity, 4:5 is estimate feet height
+        latent_dim = 4  # at least 3 to estimate base linear velocity, 4:5 is estimate feet height
         encoder_hidden_dims = [128, 64]
 
     class algorithm:
@@ -320,12 +320,12 @@ class DiabloCfgPPO(BaseConfig):
         )
         algorithm_class_name = "PPO"
         num_steps_per_env = 48  # per iteration
-        max_iterations = 5000  # number of policy updates
+        max_iterations = 50000  # number of policy updates
 
         # logging
         save_interval = 100  # check for potential saves every this many iterations
         experiment_name = "diablo_trimesh"
-        run_name = "3-E2E-非对称AC-速度_高度估计_5000"
+        run_name = "5-E2E-非对称AC-速度_高度估计_上楼梯_5000"
         # load and resume
         resume = False
         load_run = -1  # -1 = last run

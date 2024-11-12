@@ -372,16 +372,18 @@ class Diablo(BaseTask):
                 )
                 * self.obs_scales.height_measurements
             )
-            wheel_radius = self.cfg.asset.wheel_radius
-            self.feet_height = (self.rigid_state[:, self.feet_indices, 2] - wheel_radius ) * self.obs_scales.height_measurements
 
+            # wheel_radius = self.cfg.asset.wheel_radius
+            # self.feet_height = (self.rigid_state[:, self.feet_indices, 2] - wheel_radius ) * self.obs_scales.height_measurements
+            self.base_height_obs = self.base_height.unsqueeze(1) #* self.obs_scales.base_height
+            # print('self.base_height_obs',self.base_height_obs)
             self.privileged_obs_buf = torch.cat(
                 (
                     self.base_lin_vel * self.obs_scales.lin_vel,    # 3
-                    self.feet_height, # 2
-                    self.obs_buf,   # 
-                    self.last_actions[:, :, 0],
-                    self.last_actions[:, :, 1],
+                    self.base_height_obs * self.obs_scales.height_measurements, # 1
+                    self.obs_buf,   # 27
+                    self.last_actions[:, :, 0], # 6
+                    self.last_actions[:, :, 1], # 6
                     self.dof_acc * self.obs_scales.dof_acc,
                     heights,
                     self.torques * self.obs_scales.torque,
@@ -628,7 +630,6 @@ class Diablo(BaseTask):
         self.base_height = torch.mean(
             self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1
         )
-
     def _resample_commands(self, env_ids):
         """Randommly select commands of some environments
 

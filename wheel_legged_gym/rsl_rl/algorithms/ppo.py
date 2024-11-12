@@ -285,20 +285,20 @@ class PPO:
                     self.vel_est_loss = vel_est_loss
 
                     if self.actor_critic.latent_dim > 3:
-                        latent_feet_height_batch = latent_batch[:, 3:5]
-                        critic_obs_feet_height_batch = critic_obs_batch[:, 3:5]
-                        feet_height_est_loss = (
+                        latent_base_height_batch = latent_batch[:, 3]
+                        critic_obs_base_height_batch = critic_obs_batch[:, 3]
+                        base_height_est_loss = (
                             (
-                                latent_feet_height_batch
-                                - critic_obs_feet_height_batch
+                                latent_base_height_batch
+                                - critic_obs_base_height_batch
                             )
                             .pow(2)
                             .mean()
                         )
-                        extra_loss = vel_est_loss + feet_height_est_loss
+                        extra_loss = vel_est_loss + base_height_est_loss
 
-                        feet_height_difference = latent_feet_height_batch.cpu().detach().numpy() - critic_obs_feet_height_batch.cpu().detach().numpy()
-                        left_feet_height, right_feet_height = np.mean(np.abs(feet_height_difference),axis=0)
+                        feet_height_difference = latent_base_height_batch.cpu().detach().numpy() - critic_obs_base_height_batch.cpu().detach().numpy()
+                        pre_base_height = np.mean(np.abs(feet_height_difference),axis=0)
                     else:
                         extra_loss = vel_est_loss
 
@@ -316,7 +316,7 @@ class PPO:
         if num_updates_extra > 0:
             mean_extra_loss /= num_updates_extra
         self.storage.clear()
-        if self.actor_critic.is_sequence and self.actor_critic.latent_dim > 3:
-            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff, v_z_est_diff, left_feet_height, right_feet_height)
+        if self.actor_critic.is_sequence and self.actor_critic.latent_dim == 4:
+            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff, v_z_est_diff, pre_base_height)
         else:
             return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss,v_x_est_diff ,  v_y_est_diff, v_z_est_diff)
