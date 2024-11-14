@@ -167,7 +167,7 @@ class OnPolicyRunner:
             if self.cfg["policy_class_name"] == "ActorCriticSequence" and self.policy_cfg["latent_dim"] > 3:
                 mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, \
                 v_x_est_diff, v_y_est_diff,v_z_est_diff , \
-                pre_base_height  = (
+                est_base_height_diff  = (
                     self.alg.update()
                 )
             else:
@@ -211,7 +211,7 @@ class OnPolicyRunner:
         )
         if self.cfg["policy_class_name"] == "ActorCriticSequence":
             if self.policy_cfg["latent_dim"] == 4:
-                self.writer.add_scalar("State_Esimator/pre_feet_height", locs["pre_base_height"] / 5., locs["it"])
+                self.writer.add_scalar("State_Esimator/est_base_height_diff", locs["est_base_height_diff"] / 5., locs["it"])
             self.writer.add_scalar("State_Esimator/mean_v_x_est_diff", locs["v_x_est_diff"] / 10., locs["it"])
             self.writer.add_scalar("State_Esimator/mean_v_y_est_diff", locs["v_y_est_diff"] / 10., locs["it"])
             self.writer.add_scalar("State_Esimator/mean_v_z_est_diff", locs["v_z_est_diff"] / 10., locs["it"])            

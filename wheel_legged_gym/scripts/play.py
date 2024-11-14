@@ -45,7 +45,7 @@ def play(args):
     # override some parameters for testing
     env_cfg.env.episode_length_s = 20
     env_cfg.env.fail_to_terminal_time_s = 3
-    env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
+    env_cfg.env.num_envs = min(env_cfg.env.num_envs, 1)
     env_cfg.terrain.num_rows = 5
     env_cfg.terrain.num_cols = 10
     env_cfg.terrain.max_init_terrain_level = env_cfg.terrain.num_rows - 1
@@ -87,7 +87,7 @@ def play(args):
         print("Exported policy as jit script to: ", path)
 
     logger = Logger(env.dt)
-    robot_index = 21  # which robot is used for logging
+    robot_index = 0  # which robot is used for logging
     joint_index = 1  # which joint is used for logging
     stop_state_log = 1000  # number of steps before plotting states
     stop_rew_log = (
@@ -110,23 +110,24 @@ def play(args):
             actions = policy(obs.detach())
 
         env.commands[:, 0] = 1
-        env.commands[:, 2] = 0.29 + 0.07 * np.sin(i * 0.01)
+        env.commands[:, 1] = 0
+        env.commands[:, 2] = 0.29 #+ 0.07 * np.sin(i * 0.01)
         env.commands[:, 3] = 0
 
-        if CoM_offset_compensate:
-            if i > 100 and i < 200:
-                vel_cmd[:] = env.commands[:, 0] * np.clip((i - 100) * 0.01, 0, 1)
-            elif i>= 200 and i < 300:
-                vel_cmd[:] = env.commands[:, 0] * np.clip((300 - i) * 0.01, 0, 1)
-            else:
-                vel_cmd[:] = 0
-            vel_err_intergral += (
-                (vel_cmd - env.base_lin_vel[:, 0])
-                * env.dt
-                * ((vel_cmd - env.base_lin_vel[:, 0]).abs() < 0.5)
-            )
-            vel_err_intergral = torch.clip(vel_err_intergral, -0.5, 0.5)
-            env.commands[:, 0] = vel_cmd + vel_err_intergral
+        # if CoM_offset_compensate:
+        #     if i > 100 and i < 200:
+        #         vel_cmd[:] = env.commands[:, 0] * np.clip((i - 100) * 0.01, 0, 1)
+        #     elif i>= 200 and i < 300:
+        #         vel_cmd[:] = env.commands[:, 0] * np.clip((300 - i) * 0.01, 0, 1)
+        #     else:
+        #         vel_cmd[:] = 0
+        #     vel_err_intergral += (
+        #         (vel_cmd - env.base_lin_vel[:, 0])
+        #         * env.dt
+        #         * ((vel_cmd - env.base_lin_vel[:, 0]).abs() < 0.5)
+        #     )
+        #     vel_err_intergral = torch.clip(vel_err_intergral, -0.5, 0.5)
+        #     env.commands[:, 0] = vel_cmd + vel_err_intergral
 
         obs, _, rews, dones, infos, obs_history = env.step(actions)
         if RECORD_FRAMES:
