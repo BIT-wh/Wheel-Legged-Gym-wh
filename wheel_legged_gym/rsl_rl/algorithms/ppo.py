@@ -261,8 +261,7 @@ class PPO:
         v_x_est_diff = 0
         v_y_est_diff = 0
         v_z_est_diff = 0
-        left_feet_height = 0
-        right_feet_height = 0
+
         if self.extra_optimizer is not None:
             generator = self.storage.encoder_mini_batch_generator(
                 self.num_mini_batches, self.num_learning_epochs
@@ -298,7 +297,7 @@ class PPO:
                         extra_loss = vel_est_loss + base_height_est_loss
 
                         feet_height_difference = latent_base_height_batch.cpu().detach().numpy() - critic_obs_base_height_batch.cpu().detach().numpy()
-                        pre_base_height = np.mean(np.abs(feet_height_difference),axis=0)
+                        est_base_height_diff = np.mean(np.abs(feet_height_difference),axis=0)
                     else:
                         extra_loss = vel_est_loss
 
@@ -317,6 +316,6 @@ class PPO:
             mean_extra_loss /= num_updates_extra
         self.storage.clear()
         if self.actor_critic.is_sequence and self.actor_critic.latent_dim == 4:
-            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff, v_z_est_diff, pre_base_height)
+            return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss, v_x_est_diff, v_y_est_diff, v_z_est_diff, est_base_height_diff)
         else:
             return (mean_value_loss, mean_surrogate_loss, mean_kl, mean_extra_loss,v_x_est_diff ,  v_y_est_diff, v_z_est_diff)
