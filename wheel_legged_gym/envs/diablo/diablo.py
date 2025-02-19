@@ -51,7 +51,7 @@ from wheel_legged_gym.utils.math import (
 )
 from wheel_legged_gym.utils.helpers import class_to_dict
 from wheel_legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
-
+# test
 
 class Diablo(BaseTask):
     def __init__(
